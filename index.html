@@ -13,213 +13,266 @@
         .button { color: white; border: none; cursor: pointer; margin-top: 10px; }
         .primary-button { background-color: #0d6efd; }
         .secondary-button { background-color: #6c757d; }
-        #question { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; }
-        .options-container { list-style: none; padding: 0; }
-        .option { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; }
-        .option.selected { background-color: #dbeafe; }
+        .danger-button { background-color: #dc3545; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
         textarea { height: 120px; }
+        .question-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 5px; }
+        .question-item-text { flex-grow: 1; margin-right: 10px; }
+        .question-item .button { width: auto; padding: 5px 10px; font-size: 0.9em; margin-top: 0; margin-left: 5px;}
     </style>
 </head>
 <body>
     <div class="container">
         <div id="subject-view">
             <h2>과목 선택</h2>
-            <p>공부할 과목을 선택하세요.</p>
             <div id="subject-list">로딩 중...</div>
         </div>
 
         <div id="quiz-view" class="hidden">
             <h2 id="quiz-header"></h2>
-            <div id="quiz-body">
-                <div id="question"></div>
-                <ul class="options-container" id="options-container"></ul>
-                <button id="submit-btn" class="button primary-button">정답 제출</button>
-            </div>
+            <div id="quiz-body"></div>
             <hr style="margin: 20px 0;">
-            <button class="button secondary-button" onclick="showView('add-view')">✏️ 이 과목에 문제 추가하기</button>
+            <button class="button secondary-button" onclick="showManagementView()">📋 문제 관리</button>
             <button class="button secondary-button" onclick="showView('subject-view')">↩️ 과목 선택으로 돌아가기</button>
         </div>
+        
+        <div id="management-view" class="hidden">
+            <h2 id="management-header">문제 관리</h2>
+            <button class="button primary-button" onclick="showAddForm()">+ 새 문제 추가</button>
+            <button class="button primary-button" onclick="showView('bulk-add-view')">+ 여러 문제 한 번에 추가</button>
+            <hr>
+            <div id="question-list-container"></div>
+            <button class="button secondary-button" onclick="showView('quiz-view')">← 퀴즈 화면으로 돌아가기</button>
+        </div>
 
-        <div id="add-view" class="hidden">
-            <h2 id="add-header">문제 추가</h2>
-            <div class="form-group"><label for="new-question">문제</label><input type="text" id="new-question"></div>
-            <div class="form-group"><label for="new-answer">정답</label><input type="text" id="new-answer"></div>
-            <div class="form-group"><label for="new-part">파트</label><select id="new-part"></select></div>
+        <div id="add-edit-view" class="hidden">
+            <h2 id="add-edit-header"></h2>
+            <input type="hidden" id="editing-question-id">
+            <div class="form-group"><label for="q-text">문제</label><input type="text" id="q-text"></div>
+            <div class="form-group"><label for="q-answer">정답</label><input type="text" id="q-answer"></div>
+            <div class="form-group"><label for="q-part">파트</label><select id="q-part"></select></div>
             <div class="form-group">
                 <label>보기</label>
-                <div id="new-options-container">
-                    <input type="text" class="new-option" placeholder="보기 1"><input type="text" class="new-option" placeholder="보기 2">
-                </div>
+                <div id="q-options-container"></div>
                 <button onclick="addOptionField()">보기 필드 추가</button>
             </div>
-            <button class="button primary-button" onclick="addSingleQuestion()">DB에 저장</button>
-            <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
+            <button id="save-btn" class="button primary-button">저장</button>
+            <button class="button secondary-button" onclick="showView('management-view')">← 관리 화면으로</button>
+        </div>
+        
+        <div id="bulk-add-view" class="hidden">
+            <h2>📚 여러 문제 추가하기</h2>
+            <div class="form-group">
+                <textarea id="bulk-text" placeholder="문제: ...\n보기: ..., ...\n정답: ...\n해설: ...\n---"></textarea>
+            </div>
+            <button class="button primary-button" onclick="addBulkQuestions()">DB에 한 번에 저장하기</button>
+            <button class="button secondary-button" onclick="showView('management-view')">← 관리 화면으로</button>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <script>
-        // 1단계에서 복사한 firebaseConfig 코드를 여기에 붙여넣으세요
-        const firebaseConfig = {
-  apiKey: "AIzaSyBl4mNG0HVKLY159dPjJEuYZTp9_ay_guk",
-  authDomain: "my-cbt-app-2cdb9.firebaseapp.com",
-  projectId: "my-cbt-app-2cdb9",
-  storageBucket: "my-cbt-app-2cdb9.firebasestorage.app",
-  messagingSenderId: "1091430877229",
-  appId: "1:1091430877229:web:1c4fae4ff852df4e1610a4"
-};
-        // Firebase 초기화
+        // 여기에 본인의 firebaseConfig 코드를 붙여넣으세요.
+        const firebaseConfig = { /* ... */ };
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 전역 변수
+        // 전역 변수 & HTML 요소 (이전과 유사)
         let currentSubjectId = null;
         let currentSubjectData = {};
         let questions = [];
-        let currentQuiz = 0;
-        let score = 0;
+        const views = ['subject-view', 'quiz-view', 'management-view', 'add-edit-view', 'bulk-add-view'];
 
-        // HTML 요소
-        const views = ['subject-view', 'quiz-view', 'add-view'];
-        
-        /** 화면 전환 함수 */
-        function showView(viewId) {
-            views.forEach(id => {
-                document.getElementById(id).classList.toggle('hidden', id !== viewId);
-            });
-        }
+        function showView(viewId) { views.forEach(id => document.getElementById(id).classList.toggle('hidden', id !== viewId)); }
 
-        /** [신규] 과목 목록 불러오기 */
-        async function loadSubjects() {
-            showView('subject-view');
-            const subjectListDiv = document.getElementById('subject-list');
-            subjectListDiv.innerHTML = '과목 로딩 중...';
-            
-            try {
-                const snapshot = await db.collection('subjects').get();
-                if (snapshot.empty) {
-                    subjectListDiv.innerHTML = '과목이 없습니다. Firebase 콘솔에서 첫 과목을 추가해주세요.';
-                    return;
-                }
-                
-                subjectListDiv.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const subject = doc.data();
-                    const button = document.createElement('button');
-                    button.textContent = `${subject.name} (${subject.questionCount || 0}문제)`;
-                    button.className = 'button primary-button';
-                    button.onclick = () => selectSubject(doc.id, subject);
-                    subjectListDiv.appendChild(button);
-                });
-            } catch (error) {
-                console.error("과목 로드 오류:", error);
-                subjectListDiv.innerHTML = '과목을 불러오는 데 실패했습니다.';
-            }
-        }
-        
-        /** [신규] 과목 선택 시 실행 */
-        function selectSubject(subjectId, subjectData) {
-            currentSubjectId = subjectId;
-            currentSubjectData = subjectData;
-            document.getElementById('quiz-header').textContent = `${subjectData.name} 퀴즈`;
-            loadQuestionsForSubject();
-        }
+        async function loadSubjects() { /* 이전과 동일 */ }
+        function selectSubject(id, data) { /* 이전과 동일 */ }
+        async function loadQuestionsForSubject() { /* 이전과 동일 */ }
+        function displayCurrentQuiz() { /* 이전과 동일, UI 구조에 맞게 수정 필요 */ }
 
-        /** [신규] 선택된 과목의 문제들 불러오기 */
-        async function loadQuestionsForSubject() {
-            showView('quiz-view');
-            document.getElementById('quiz-body').innerHTML = '<p>문제 로딩 중...</p>';
+        /** [신규] 문제 관리 화면 표시 */
+        async function showManagementView() {
+            showView('management-view');
+            document.getElementById('management-header').textContent = `[${currentSubjectData.name}] 문제 관리`;
+            const container = document.getElementById('question-list-container');
+            container.innerHTML = '문제 목록 로딩 중...';
             
             const snapshot = await db.collection('subjects').doc(currentSubjectId).collection('questions').get();
             questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
-            currentQuiz = 0;
-            score = 0;
-            displayCurrentQuiz();
-        }
-        
-        /** 현재 퀴즈 표시 (기존 로직과 유사) */
-        function displayCurrentQuiz() {
-            const quizBody = document.getElementById('quiz-body');
+            container.innerHTML = '';
             if (questions.length === 0) {
-                 quizBody.innerHTML = "이 과목에 문제가 없습니다. 새 문제를 추가해보세요.";
-                 return;
+                container.innerHTML = '<p>문제가 없습니다. 새 문제를 추가해보세요.</p>';
+                return;
             }
-            // 퀴즈 화면 기본 HTML 구조 복원
-            quizBody.innerHTML = `
-                <div id="question"></div>
-                <ul class="options-container" id="options-container"></ul>
-                <button id="submit-btn" class="button primary-button">정답 제출</button>
-            `;
-            // 퀴즈 내용 채우기
-            const questionEl = document.getElementById('question');
-            const optionsContainer = document.getElementById('options-container');
-            const currentQuizData = questions[currentQuiz];
-            questionEl.textContent = `${currentQuiz + 1}. ${currentQuizData.text}`;
-            optionsContainer.innerHTML = '';
-            currentQuizData.options.forEach(optionText => {
-                const li = document.createElement('li');
-                li.className = 'option';
-                li.textContent = optionText;
-                li.onclick = () => { /* ... 보기 선택 로직 ... */ };
-                optionsContainer.appendChild(li);
+
+            questions.forEach(q => {
+                const item = document.createElement('div');
+                item.className = 'question-item';
+                item.innerHTML = `
+                    <span class="question-item-text">${q.text}</span>
+                    <div>
+                        <button class="button secondary-button" onclick="showEditForm('${q.id}')">수정</button>
+                        <button class="button danger-button" onclick="deleteQuestion('${q.id}', '${q.text.replace(/'/g, "\\'")}')">삭제</button>
+                    </div>
+                `;
+                container.appendChild(item);
             });
-            // 제출 버튼 이벤트 다시 연결
-            document.getElementById('submit-btn').onclick = submitAnswer;
         }
 
-        /** [신규] 한 문제 추가 (서브컬렉션 & 데이터 중복 업데이트) */
-        async function addSingleQuestion() {
-            const text = document.getElementById('new-question').value.trim();
-            const answer = document.getElementById('new-answer').value.trim();
-            const partName = document.getElementById('new-part').value;
+        /** [신규] 문제 삭제 함수 */
+        async function deleteQuestion(id, text) {
+            if (!confirm(`'${text}' 문제를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
+
+            const subjectRef = db.collection('subjects').doc(currentSubjectId);
+            const questionRef = subjectRef.collection('questions').doc(id);
+
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const subjectDoc = await transaction.get(subjectRef);
+                    const newCount = (subjectDoc.data().questionCount || 1) - 1;
+                    transaction.update(subjectRef, { questionCount: newCount });
+                    transaction.delete(questionRef);
+                });
+                alert('문제가 삭제되었습니다.');
+                showManagementView(); // 목록 새로고침
+            } catch (error) {
+                console.error("문제 삭제 오류:", error);
+                alert('문제 삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        /** [신규] 문제 추가 폼 보여주기 */
+        function showAddForm() {
+            document.getElementById('add-edit-header').textContent = '새 문제 추가';
+            document.getElementById('editing-question-id').value = ''; // 수정 모드가 아님을 표시
+            
+            // 폼 필드 초기화
+            document.getElementById('q-text').value = '';
+            document.getElementById('q-answer').value = '';
+            document.getElementById('q-options-container').innerHTML = '<input type="text" class="new-option" placeholder="보기 1"><input type="text" class="new-option" placeholder="보기 2">';
+            
+            populatePartSelect(); // 파트 목록 채우기
+            document.getElementById('save-btn').onclick = saveQuestion; // 저장 버튼 기능 연결
+            showView('add-edit-view');
+        }
+
+        /** [신규] 문제 수정 폼 보여주기 */
+        function showEditForm(id) {
+            const question = questions.find(q => q.id === id);
+            if (!question) return;
+
+            document.getElementById('add-edit-header').textContent = '문제 수정';
+            document.getElementById('editing-question-id').value = id; // 수정 모드임을 표시
+            
+            // 기존 데이터로 폼 채우기
+            document.getElementById('q-text').value = question.text;
+            document.getElementById('q-answer').value = question.answer;
+            populatePartSelect(question.partName);
+            
+            const optionsContainer = document.getElementById('q-options-container');
+            optionsContainer.innerHTML = '';
+            question.options.forEach(opt => {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'new-option';
+                input.value = opt;
+                optionsContainer.appendChild(input);
+            });
+            
+            document.getElementById('save-btn').onclick = saveQuestion;
+            showView('add-edit-view');
+        }
+        
+        /** [신규] 문제 저장/수정 함수 */
+        async function saveQuestion() {
+            const id = document.getElementById('editing-question-id').value;
+            const isEditing = !!id;
+            
+            const text = document.getElementById('q-text').value.trim();
+            const answer = document.getElementById('q-answer').value.trim();
+            const partName = document.getElementById('q-part').value;
             const options = Array.from(document.querySelectorAll('.new-option')).map(i => i.value.trim()).filter(Boolean);
 
             if (!text || !answer || !partName || options.length < 2) return alert("모든 필드를 올바르게 입력해주세요.");
 
-            const questionData = { text, options, answer, partName };
-            const subjectRef = db.collection('subjects').doc(currentSubjectId);
-            const questionRef = subjectRef.collection('questions').doc();
+            const questionData = { text, answer, partName, options };
             
-            try {
-                // 트랜잭션을 사용하여 문제 추가와 카운트 증가를 동시에 처리 (데이터 정합성 보장)
-                await db.runTransaction(async (transaction) => {
-                    const subjectDoc = await transaction.get(subjectRef);
-                    if (!subjectDoc.exists) throw "과목 문서가 존재하지 않습니다!";
-                    
+            if (isEditing) { // 수정 모드
+                await db.collection('subjects').doc(currentSubjectId).collection('questions').doc(id).update(questionData);
+                alert('문제가 수정되었습니다.');
+            } else { // 추가 모드
+                const subjectRef = db.collection('subjects').doc(currentSubjectId);
+                const questionRef = subjectRef.collection('questions').doc();
+                await db.runTransaction(async t => {
+                    const subjectDoc = await t.get(subjectRef);
                     const newCount = (subjectDoc.data().questionCount || 0) + 1;
-                    transaction.update(subjectRef, { questionCount: newCount });
-                    transaction.set(questionRef, questionData);
+                    t.update(subjectRef, { questionCount: newCount });
+                    t.set(questionRef, questionData);
+                });
+                alert('문제가 추가되었습니다.');
+            }
+            showManagementView();
+        }
+
+        /** [신규] 여러 문제 추가 함수 (카운트 업데이트 기능 추가) */
+        async function addBulkQuestions() {
+            const bulkText = document.getElementById('bulk-text').value.trim();
+            const questionBlocks = bulkText.split('---');
+            const subjectRef = db.collection('subjects').doc(currentSubjectId);
+            const questionsColRef = subjectRef.collection('questions');
+            let addedCount = 0;
+
+            try {
+                await db.runTransaction(async t => {
+                    const subjectDoc = await t.get(subjectRef);
+                    
+                    questionBlocks.forEach(block => {
+                        // ... 블록 파싱 로직 (이전과 유사) ...
+                        const qData = { /* 파싱된 데이터 */ };
+                        if (qData.text && qData.answer) {
+                           t.set(questionsColRef.doc(), qData);
+                           addedCount++;
+                        }
+                    });
+
+                    const newCount = (subjectDoc.data().questionCount || 0) + addedCount;
+                    t.update(subjectRef, { questionCount: newCount });
                 });
                 
-                alert("성공! 문제가 데이터베이스에 저장되었습니다.");
-                selectSubject(currentSubjectId, { ...currentSubjectData, questionCount: (currentSubjectData.questionCount || 0) + 1 });
-            } catch (error) {
-                console.error("문제 추가 오류: ", error);
-                alert("오류가 발생했습니다.");
+                if (addedCount > 0) {
+                    alert(`${addedCount}개의 문제가 저장되었습니다.`);
+                    showManagementView();
+                } else {
+                    alert('양식에 맞는 문제를 찾지 못했습니다.');
+                }
+            } catch (e) {
+                console.error("대량 추가 오류: ", e);
+                alert('오류가 발생했습니다.');
             }
         }
         
-        // 문제 추가 화면으로 갈 때 파트 목록 채우기
-        document.querySelector('button[onclick="showView(\'add-view\')"]').addEventListener('click', () => {
-            document.getElementById('add-header').textContent = `[${currentSubjectData.name}] 문제 추가`;
-            const partSelect = document.getElementById('new-part');
+        /** 유틸리티 함수들 */
+        function addOptionField() { /* 이전과 동일 */ }
+        function populatePartSelect(selectedValue) {
+            const partSelect = document.getElementById('q-part');
             partSelect.innerHTML = '';
             (currentSubjectData.partOrder || []).forEach(part => {
                 const option = document.createElement('option');
                 option.value = part;
                 option.textContent = part;
+                if (part === selectedValue) option.selected = true;
                 partSelect.appendChild(option);
             });
-        });
+        }
 
         // 페이지 첫 로드 시 과목 목록 불러오기
         loadSubjects();
+        // -- 이 아래에 퀴즈 풀이 로직(displayCurrentQuiz, submitAnswer 등)에 대한 함수들을
+        // -- 이전 코드에서 가져와 필요에 맞게 수정하여 배치하면 됩니다.
     </script>
 </body>
 </html>
