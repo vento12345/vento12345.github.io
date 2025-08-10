@@ -5,339 +5,221 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 CBT</title>
     <style>
+        /* CSS는 이전과 동일합니다 */
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
         .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .hidden { display: none; } /* 화면 전환을 위한 CSS */
-        
-        /* 퀴즈 관련 스타일 */
+        .hidden { display: none; }
+        select, .button { width: 100%; padding: 12px; font-size: 1.1em; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .button { color: white; border: none; cursor: pointer; margin-top: 10px; }
+        .primary-button { background-color: #0d6efd; }
+        .secondary-button { background-color: #6c757d; }
         #question { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; }
         .options-container { list-style: none; padding: 0; }
-        .option { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
-        .option:hover { background-color: #f5f5f5; }
-        .option.selected { background-color: #dbeafe; border-color: #60a5fa; }
-        .button { width: 100%; padding: 15px; font-size: 1.1em; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-        .primary-button { background-color: #0d6efd; }
-        .primary-button:hover { background-color: #0b5ed7; }
-        .secondary-button { background-color: #6c757d; }
-        
-        /* 문제 관리 폼 스타일 */
+        .option { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; }
+        .option.selected { background-color: #dbeafe; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        textarea { height: 150px; resize: vertical; }
+        textarea { height: 120px; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <div id="quiz-view">
-            <h2 id="quiz-header">나만의 CBT</h2>
+        <div id="subject-view">
+            <h2>과목 선택</h2>
+            <p>공부할 과목을 선택하세요.</p>
+            <div id="subject-list">로딩 중...</div>
+        </div>
+
+        <div id="quiz-view" class="hidden">
+            <h2 id="quiz-header"></h2>
             <div id="quiz-body">
-                <div id="question">문제를 불러오는 중...</div>
+                <div id="question"></div>
                 <ul class="options-container" id="options-container"></ul>
                 <button id="submit-btn" class="button primary-button">정답 제출</button>
-                <div id="results"></div>
             </div>
             <hr style="margin: 20px 0;">
-            <button class="button secondary-button" onclick="showView('add-view')">✏️ 한 문제 추가하기</button>
-            <button class="button secondary-button" onclick="showView('bulk-add-view')">📚 여러 문제 추가하기</button>
-            <button class="button secondary-button" onclick="showView('data-view')">💾 데이터 저장/관리</button>
+            <button class="button secondary-button" onclick="showView('add-view')">✏️ 이 과목에 문제 추가하기</button>
+            <button class="button secondary-button" onclick="showView('subject-view')">↩️ 과목 선택으로 돌아가기</button>
         </div>
 
         <div id="add-view" class="hidden">
-            <h2>✏️ 한 문제 추가하기</h2>
+            <h2 id="add-header">문제 추가</h2>
+            <div class="form-group"><label for="new-question">문제</label><input type="text" id="new-question"></div>
+            <div class="form-group"><label for="new-answer">정답</label><input type="text" id="new-answer"></div>
+            <div class="form-group"><label for="new-part">파트</label><select id="new-part"></select></div>
             <div class="form-group">
-                <label for="new-question">문제</label>
-                <input type="text" id="new-question" placeholder="문제 내용을 입력하세요">
-            </div>
-            <div class="form-group">
-                <label for="new-answer">정답</label>
-                <input type="text" id="new-answer" placeholder="정답을 입력하세요">
-            </div>
-            <div class="form-group">
-                <label for="new-explanation">해설 (선택)</label>
-                <input type="text" id="new-explanation" placeholder="해설을 입력하세요">
-            </div>
-            <div class="form-group">
-                <label>보기 (정답 포함 2개 이상)</label>
+                <label>보기</label>
                 <div id="new-options-container">
-                    <input type="text" class="new-option" placeholder="보기 1">
-                    <input type="text" class="new-option" placeholder="보기 2">
+                    <input type="text" class="new-option" placeholder="보기 1"><input type="text" class="new-option" placeholder="보기 2">
                 </div>
-                <button onclick="addOptionField()">보기 추가</button>
+                <button onclick="addOptionField()">보기 필드 추가</button>
             </div>
-            <button class="button primary-button" onclick="addSingleQuestion()">추가하기</button>
-            <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
-        </div>
-        
-        <div id="bulk-add-view" class="hidden">
-            <h2>📚 여러 문제 추가하기</h2>
-            <p>아래 양식에 맞춰 문제를 입력하세요. 각 문제는 '---'로 구분합니다.</p>
-            <div class="form-group">
-                <textarea id="bulk-text" placeholder="문제: 첫 번째 문제 내용
-보기: 보기1, 보기2, 보기3
-정답: 보기2
-해설: 첫 번째 문제 해설
----
-문제: 두 번째 문제 내용
-..."></textarea>
-            </div>
-            <button class="button primary-button" onclick="addBulkQuestions()">한 번에 추가하기</button>
-            <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
-        </div>
-
-        <div id="data-view" class="hidden">
-            <h2>💾 데이터 저장/관리</h2>
-            <p>문제 추가/수정이 끝나면, 아래 텍스트 전체를 복사(Ctrl+C)하여 GitHub의 index.html 파일 script 태그 안의 `let quizData = [...]` 부분을 교체해주세요.</p>
-            <div class="form-group">
-                <textarea id="json-output" readonly></textarea>
-            </div>
+            <button class="button primary-button" onclick="addSingleQuestion()">DB에 저장</button>
             <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
         </div>
     </div>
 
-<script>
-    // =======================================================
-    // ▼▼▼ 이 곳에 문제 데이터를 붙여넣습니다 ▼▼▼
-    // =======================================================
-    let quizData = [
-  {
-    "question": "대한민국의 수도는 어디일까요?",
-    "options": [
-      "부산",
-      "서울",
-      "인천",
-      "대구"
-    ],
-    "answer": "서울",
-    "explanation": "서울은 대한민국의 수도이자 최대 도시입니다."
-  },
-  {
-    "question": "HTML은 무엇의 약자일까요?",
-    "options": [
-      "Hyper Text Markup Language",
-      "High Tool Markup Language",
-      "Hyperlink and Text Markup Language"
-    ],
-    "answer": "Hyper Text Markup Language",
-    "explanation": "HTML은 웹 페이지의 구조를 만드는 데 사용되는 표준 마크업 언어입니다."
-  },
-  {
-    "question": "CSS가 하는 주요 역할은 무엇일까요?",
-    "options": [
-      "데이터베이스 관리",
-      "웹페이지 스타일링",
-      "서버 로직 처리"
-    ],
-    "answer": "웹페이지 스타일링",
-    "explanation": "CSS(Cascading Style Sheets)는 웹 페이지의 디자인과 레이아웃을 담당합니다."
-  },
-  {
-    "question": "ㅎㅎ",
-    "options": [
-      "ㅃ",
-      "2",
-      "ㄸ"
-    ],
-    "answer": "2",
-    "explanation": "ㄲ"
-  }
-];
-    // =======================================================
-    // ▲▲▲ 이 곳에 문제 데이터를 붙여넣습니다 ▲▲▲
-    // =======================================================
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    // 전역 변수 선언
-    const views = ['quiz-view', 'add-view', 'bulk-add-view', 'data-view'];
-    const questionEl = document.getElementById('question');
-    const optionsContainer = document.getElementById('options-container');
-    const submitBtn = document.getElementById('submit-btn');
-    const resultsEl = document.getElementById('results');
-    const quizHeaderEl = document.getElementById('quiz-header');
+    <script>
+        // 1단계에서 복사한 firebaseConfig 코드를 여기에 붙여넣으세요
+        const firebaseConfig = {
+  apiKey: "AIzaSyBl4mNG0HVKLY159dPjJEuYZTp9_ay_guk",
+  authDomain: "my-cbt-app-2cdb9.firebaseapp.com",
+  projectId: "my-cbt-app-2cdb9",
+  storageBucket: "my-cbt-app-2cdb9.firebasestorage.app",
+  messagingSenderId: "1091430877229",
+  appId: "1:1091430877229:web:1c4fae4ff852df4e1610a4"
+};
+        // Firebase 초기화
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    let currentQuiz = 0;
-    let score = 0;
-    let selectedOption = null;
+        // 전역 변수
+        let currentSubjectId = null;
+        let currentSubjectData = {};
+        let questions = [];
+        let currentQuiz = 0;
+        let score = 0;
 
-    /**
-     * 특정 ID의 화면(view)만 보여주고 나머지는 숨깁니다.
-     * @param {string} viewId - 보여줄 화면의 ID
-     */
-    function showView(viewId) {
-        views.forEach(id => {
-            document.getElementById(id).classList.toggle('hidden', id !== viewId);
-        });
-
-        // 데이터 관리 화면을 보여줄 때, 현재 quizData를 JSON으로 변환하여 보여줍니다.
-        if (viewId === 'data-view') {
-            const jsonOutput = document.getElementById('json-output');
-            // JSON.stringify의 3번째 인자는 들여쓰기(pretty-print)를 위함입니다.
-            jsonOutput.value = `let quizData = ${JSON.stringify(quizData, null, 2)};`;
-        }
+        // HTML 요소
+        const views = ['subject-view', 'quiz-view', 'add-view'];
         
-        // 퀴즈 화면으로 돌아갈 때 퀴즈를 다시 로드합니다.
-        if (viewId === 'quiz-view') {
-            loadQuiz();
-        }
-    }
-
-    /**
-     * 퀴즈를 화면에 표시하는 함수
-     */
-    function loadQuiz() {
-        if (quizData.length === 0) {
-            quizHeaderEl.textContent = "문제가 없습니다.";
-            document.getElementById('quiz-body').innerHTML = "<p>'문제 추가하기' 버튼을 눌러 첫 문제를 만들어보세요!</p>";
-            return;
-        }
-
-        // 퀴즈가 끝나면 결과 표시
-        if (currentQuiz >= quizData.length) {
-            document.getElementById('quiz-body').innerHTML = `
-                <h2>퀴즈 결과</h2>
-                <p>총 ${quizData.length}문제 중 ${score}문제를 맞히셨습니다!</p>
-                <button class="button primary-button" onclick="location.reload()">다시 풀기</button>
-            `;
-            return;
-        }
-        
-        quizHeaderEl.textContent = `나만의 CBT (${quizData.length}문제)`;
-        selectedOption = null;
-        resultsEl.innerHTML = '';
-        submitBtn.textContent = '정답 제출';
-
-        const currentQuizData = quizData[currentQuiz];
-        questionEl.textContent = (currentQuiz + 1) + ". " + currentQuizData.question;
-        
-        optionsContainer.innerHTML = '';
-        currentQuizData.options.forEach(optionText => {
-            const optionEl = document.createElement('li');
-            optionEl.classList.add('option');
-            optionEl.textContent = optionText;
-            optionEl.addEventListener('click', () => {
-                const currentSelected = document.querySelector('.option.selected');
-                if (currentSelected) {
-                    currentSelected.classList.remove('selected');
-                }
-                optionEl.classList.add('selected');
-                selectedOption = optionText;
+        /** 화면 전환 함수 */
+        function showView(viewId) {
+            views.forEach(id => {
+                document.getElementById(id).classList.toggle('hidden', id !== viewId);
             });
-            optionsContainer.appendChild(optionEl);
-        });
-    }
-
-    /**
-     * 정답 제출 버튼 로직
-     */
-    submitBtn.addEventListener('click', () => {
-        if (selectedOption) {
-            if (selectedOption === quizData[currentQuiz].answer) {
-                score++;
-            }
-            currentQuiz++;
-            loadQuiz(); // 다음 문제 로드 또는 결과 표시
-        } else {
-            alert("보기를 선택해주세요!");
-        }
-    });
-
-    /**
-     * '한 문제 추가' 폼에서 보기 입력 필드를 동적으로 추가합니다.
-     */
-    function addOptionField() {
-        const container = document.getElementById('new-options-container');
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'new-option';
-        input.placeholder = `보기 ${container.children.length + 1}`;
-        container.appendChild(input);
-    }
-    
-    /**
-     * '한 문제 추가' 폼의 데이터를 quizData 배열에 추가합니다.
-     */
-    function addSingleQuestion() {
-        const question = document.getElementById('new-question').value.trim();
-        const answer = document.getElementById('new-answer').value.trim();
-        const explanation = document.getElementById('new-explanation').value.trim();
-        
-        const optionNodes = document.querySelectorAll('.new-option');
-        const options = Array.from(optionNodes).map(input => input.value.trim()).filter(Boolean);
-
-        if (!question || !answer || options.length < 2) {
-            alert("문제, 정답, 그리고 최소 2개 이상의 보기를 입력해야 합니다.");
-            return;
-        }
-        
-        if (!options.includes(answer)) {
-            alert("보기에 정답이 포함되어야 합니다.");
-            return;
         }
 
-        quizData.push({ question, options, answer, explanation });
-        alert("문제가 성공적으로 추가되었습니다! '데이터 저장/관리' 화면에서 변경사항을 복사하여 저장하세요.");
-        
-        // 입력 필드 초기화
-        document.getElementById('new-question').value = '';
-        document.getElementById('new-answer').value = '';
-        document.getElementById('new-explanation').value = '';
-        document.getElementById('new-options-container').innerHTML = `
-            <input type="text" class="new-option" placeholder="보기 1">
-            <input type="text" class="new-option" placeholder="보기 2">`;
+        /** [신규] 과목 목록 불러오기 */
+        async function loadSubjects() {
+            showView('subject-view');
+            const subjectListDiv = document.getElementById('subject-list');
+            subjectListDiv.innerHTML = '과목 로딩 중...';
             
-        showView('quiz-view'); // 퀴즈 화면으로 복귀
-    }
-
-    /**
-     * '여러 문제 추가' 폼의 텍스트를 파싱하여 quizData 배열에 추가합니다.
-     */
-    function addBulkQuestions() {
-        const bulkText = document.getElementById('bulk-text').value.trim();
-        if (!bulkText) {
-            alert("추가할 문제 내용을 입력하세요.");
-            return;
+            try {
+                const snapshot = await db.collection('subjects').get();
+                if (snapshot.empty) {
+                    subjectListDiv.innerHTML = '과목이 없습니다. Firebase 콘솔에서 첫 과목을 추가해주세요.';
+                    return;
+                }
+                
+                subjectListDiv.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const subject = doc.data();
+                    const button = document.createElement('button');
+                    button.textContent = `${subject.name} (${subject.questionCount || 0}문제)`;
+                    button.className = 'button primary-button';
+                    button.onclick = () => selectSubject(doc.id, subject);
+                    subjectListDiv.appendChild(button);
+                });
+            } catch (error) {
+                console.error("과목 로드 오류:", error);
+                subjectListDiv.innerHTML = '과목을 불러오는 데 실패했습니다.';
+            }
         }
         
-        const questionBlocks = bulkText.split('---');
-        let addedCount = 0;
+        /** [신규] 과목 선택 시 실행 */
+        function selectSubject(subjectId, subjectData) {
+            currentSubjectId = subjectId;
+            currentSubjectData = subjectData;
+            document.getElementById('quiz-header').textContent = `${subjectData.name} 퀴즈`;
+            loadQuestionsForSubject();
+        }
+
+        /** [신규] 선택된 과목의 문제들 불러오기 */
+        async function loadQuestionsForSubject() {
+            showView('quiz-view');
+            document.getElementById('quiz-body').innerHTML = '<p>문제 로딩 중...</p>';
+            
+            const snapshot = await db.collection('subjects').doc(currentSubjectId).collection('questions').get();
+            questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            currentQuiz = 0;
+            score = 0;
+            displayCurrentQuiz();
+        }
         
-        questionBlocks.forEach(block => {
-            block = block.trim();
-            if (!block) return;
-
-            const lines = block.split('\n');
-            const qData = {};
-
-            lines.forEach(line => {
-                if (line.toLowerCase().startsWith('문제:')) {
-                    qData.question = line.substring(3).trim();
-                } else if (line.toLowerCase().startsWith('보기:')) {
-                    qData.options = line.substring(3).trim().split(',').map(s => s.trim());
-                } else if (line.toLowerCase().startsWith('정답:')) {
-                    qData.answer = line.substring(3).trim();
-                } else if (line.toLowerCase().startsWith('해설:')) {
-                    qData.explanation = line.substring(3).trim();
-                }
-            });
-
-            if (qData.question && qData.answer && qData.options) {
-                quizData.push(qData);
-                addedCount++;
+        /** 현재 퀴즈 표시 (기존 로직과 유사) */
+        function displayCurrentQuiz() {
+            const quizBody = document.getElementById('quiz-body');
+            if (questions.length === 0) {
+                 quizBody.innerHTML = "이 과목에 문제가 없습니다. 새 문제를 추가해보세요.";
+                 return;
             }
+            // 퀴즈 화면 기본 HTML 구조 복원
+            quizBody.innerHTML = `
+                <div id="question"></div>
+                <ul class="options-container" id="options-container"></ul>
+                <button id="submit-btn" class="button primary-button">정답 제출</button>
+            `;
+            // 퀴즈 내용 채우기
+            const questionEl = document.getElementById('question');
+            const optionsContainer = document.getElementById('options-container');
+            const currentQuizData = questions[currentQuiz];
+            questionEl.textContent = `${currentQuiz + 1}. ${currentQuizData.text}`;
+            optionsContainer.innerHTML = '';
+            currentQuizData.options.forEach(optionText => {
+                const li = document.createElement('li');
+                li.className = 'option';
+                li.textContent = optionText;
+                li.onclick = () => { /* ... 보기 선택 로직 ... */ };
+                optionsContainer.appendChild(li);
+            });
+            // 제출 버튼 이벤트 다시 연결
+            document.getElementById('submit-btn').onclick = submitAnswer;
+        }
+
+        /** [신규] 한 문제 추가 (서브컬렉션 & 데이터 중복 업데이트) */
+        async function addSingleQuestion() {
+            const text = document.getElementById('new-question').value.trim();
+            const answer = document.getElementById('new-answer').value.trim();
+            const partName = document.getElementById('new-part').value;
+            const options = Array.from(document.querySelectorAll('.new-option')).map(i => i.value.trim()).filter(Boolean);
+
+            if (!text || !answer || !partName || options.length < 2) return alert("모든 필드를 올바르게 입력해주세요.");
+
+            const questionData = { text, options, answer, partName };
+            const subjectRef = db.collection('subjects').doc(currentSubjectId);
+            const questionRef = subjectRef.collection('questions').doc();
+            
+            try {
+                // 트랜잭션을 사용하여 문제 추가와 카운트 증가를 동시에 처리 (데이터 정합성 보장)
+                await db.runTransaction(async (transaction) => {
+                    const subjectDoc = await transaction.get(subjectRef);
+                    if (!subjectDoc.exists) throw "과목 문서가 존재하지 않습니다!";
+                    
+                    const newCount = (subjectDoc.data().questionCount || 0) + 1;
+                    transaction.update(subjectRef, { questionCount: newCount });
+                    transaction.set(questionRef, questionData);
+                });
+                
+                alert("성공! 문제가 데이터베이스에 저장되었습니다.");
+                selectSubject(currentSubjectId, { ...currentSubjectData, questionCount: (currentSubjectData.questionCount || 0) + 1 });
+            } catch (error) {
+                console.error("문제 추가 오류: ", error);
+                alert("오류가 발생했습니다.");
+            }
+        }
+        
+        // 문제 추가 화면으로 갈 때 파트 목록 채우기
+        document.querySelector('button[onclick="showView(\'add-view\')"]').addEventListener('click', () => {
+            document.getElementById('add-header').textContent = `[${currentSubjectData.name}] 문제 추가`;
+            const partSelect = document.getElementById('new-part');
+            partSelect.innerHTML = '';
+            (currentSubjectData.partOrder || []).forEach(part => {
+                const option = document.createElement('option');
+                option.value = part;
+                option.textContent = part;
+                partSelect.appendChild(option);
+            });
         });
 
-        if (addedCount > 0) {
-            alert(`${addedCount}개의 문제가 성공적으로 추가되었습니다! '데이터 저장/관리' 화면에서 변경사항을 복사하여 저장하세요.`);
-            document.getElementById('bulk-text').value = ''; // 입력창 비우기
-            showView('quiz-view'); // 퀴즈 화면으로 복귀
-        } else {
-            alert("추가할 문제를 찾지 못했거나 양식이 올바르지 않습니다.");
-        }
-    }
-
-    // 페이지 첫 로드 시 퀴즈 시작
-    loadQuiz();
-</script>
-
+        // 페이지 첫 로드 시 과목 목록 불러오기
+        loadSubjects();
+    </script>
 </body>
 </html>
