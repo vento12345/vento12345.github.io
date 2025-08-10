@@ -1,0 +1,73 @@
+<style>
+  /* 보기 좋게 꾸미는 부분 (CSS) */
+  body {
+    font-family: 'Malgun Gothic', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f2f5;
+  }
+  #quiz-container {
+    border: 2px solid #ccc;
+    padding: 25px;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 600px;
+  }
+  #question {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  .option {
+    margin: 10px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .option:hover {
+    background-color: #f5f5f5;
+  }
+  #feedback {
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+    padding: 10px;
+    border-radius: 5px;
+  }
+</style>
+
+<div id="quiz-container">
+  <div id="question">1. 대한민국의 수도는 어디일까요?</div>
+  <div class="options">
+    <div class="option" onclick="checkAnswer('서울')">① 서울</div>
+    <div class="option" onclick="checkAnswer('부산')">② 부산</div>
+    <div class="option" onclick="checkAnswer('인천')">③ 인천</div>
+    <div class="option" onclick="checkAnswer('대구')">④ 대구</div>
+  </div>
+  <div id="feedback"></div>
+</div>
+
+<script>
+  // 실제 기능이 동작하는 부분 (JavaScript)
+  const correctAnswer = '서울';
+
+  function checkAnswer(selected) {
+    const feedbackEl = document.getElementById('feedback');
+    if (selected === correctAnswer) {
+      feedbackEl.textContent = "정답입니다! 🎉";
+      feedbackEl.style.color = "white";
+      feedbackEl.style.backgroundColor = "#28a745"; /* Green */
+    } else {
+      feedbackEl.textContent = "틀렸습니다. 다시 시도해보세요.";
+      feedbackEl.style.color = "white";
+      feedbackEl.style.backgroundColor = "#dc3545"; /* Red */
+    }
+  }
+</script>
