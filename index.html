@@ -1,73 +1,174 @@
-<style>
-  /* 보기 좋게 꾸미는 부분 (CSS) */
-  body {
-    font-family: 'Malgun Gothic', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f0f2f5;
-  }
-  #quiz-container {
-    border: 2px solid #ccc;
-    padding: 25px;
-    border-radius: 10px;
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 600px;
-  }
-  #question {
-    font-size: 1.3em;
-    font-weight: bold;
-    margin-bottom: 20px;
-  }
-  .option {
-    margin: 10px 0;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  .option:hover {
-    background-color: #f5f5f5;
-  }
-  #feedback {
-    margin-top: 20px;
-    font-weight: bold;
-    font-size: 1.1em;
-    padding: 10px;
-    border-radius: 5px;
-  }
-</style>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 CBT</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #quiz-container {
+            border: 1px solid #ccc;
+            padding: 25px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        #question {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .options-container {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .option {
+            margin: 10px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #f5f5f5;
+        }
+        /* 사용자가 선택한 보기를 표시하기 위한 클래스 */
+        .option.selected {
+            background-color: #dbeafe;
+            border-color: #60a5fa;
+        }
+        #submit-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        #submit-btn:hover {
+            background-color: #0b5ed7;
+        }
+        #results {
+            text-align: center;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
 
 <div id="quiz-container">
-  <div id="question">1. 대한민국의 수도는 어디일까요?</div>
-  <div class="options">
-    <div class="option" onclick="checkAnswer('서울')">① 서울</div>
-    <div class="option" onclick="checkAnswer('부산')">② 부산</div>
-    <div class="option" onclick="checkAnswer('인천')">③ 인천</div>
-    <div class="option" onclick="checkAnswer('대구')">④ 대구</div>
-  </div>
-  <div id="feedback"></div>
+    <div id="question">문제를 불러오는 중...</div>
+    <ul class="options-container" id="options-container">
+        </ul>
+    <button id="submit-btn">정답 제출</button>
+    <div id="results"></div>
 </div>
 
 <script>
-  // 실제 기능이 동작하는 부분 (JavaScript)
-  const correctAnswer = '서울';
+    // 1. 문제 은행 (이곳에 문제를 계속 추가하면 됩니다)
+    const quizData = [
+        {
+            question: "대한민국의 수도는 어디일까요?",
+            options: ["부산", "서울", "인천", "대구"],
+            answer: "서울"
+        },
+        {
+            question: "HTML은 무엇의 약자일까요?",
+            options: ["Hyper Text Markup Language", "High Tool Markup Language", "Hyperlink and Text Markup Language"],
+            answer: "Hyper Text Markup Language"
+        },
+        {
+            question: "CSS가 하는 주요 역할은 무엇일까요?",
+            options: ["데이터베이스 관리", "웹페이지 스타일링", "서버 로직 처리"],
+            answer: "웹페이지 스타일링"
+        }
+    ];
 
-  function checkAnswer(selected) {
-    const feedbackEl = document.getElementById('feedback');
-    if (selected === correctAnswer) {
-      feedbackEl.textContent = "정답입니다! 🎉";
-      feedbackEl.style.color = "white";
-      feedbackEl.style.backgroundColor = "#28a745"; /* Green */
-    } else {
-      feedbackEl.textContent = "틀렸습니다. 다시 시도해보세요.";
-      feedbackEl.style.color = "white";
-      feedbackEl.style.backgroundColor = "#dc3545"; /* Red */
+    // 필요한 HTML 요소들을 가져옵니다.
+    const quizContainer = document.getElementById('quiz-container');
+    const questionEl = document.getElementById('question');
+    const optionsContainer = document.getElementById('options-container');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultsEl = document.getElementById('results');
+
+    // 현재 문제 번호와 점수를 기록합니다.
+    let currentQuiz = 0;
+    let score = 0;
+    let selectedOption = null;
+
+    // 퀴즈를 화면에 표시하는 함수
+    function loadQuiz() {
+        // 이전에 선택했던 값 초기화
+        selectedOption = null;
+        resultsEl.innerHTML = '';
+        submitBtn.textContent = '정답 제출';
+
+        const currentQuizData = quizData[currentQuiz];
+        questionEl.textContent = (currentQuiz + 1) + ". " + currentQuizData.question;
+        
+        optionsContainer.innerHTML = ''; // 이전 보기들 삭제
+        currentQuizData.options.forEach(optionText => {
+            const optionEl = document.createElement('li');
+            optionEl.classList.add('option');
+            optionEl.textContent = optionText;
+            optionEl.addEventListener('click', () => {
+                // 이전에 선택된 것의 효과를 제거
+                const currentSelected = document.querySelector('.option.selected');
+                if (currentSelected) {
+                    currentSelected.classList.remove('selected');
+                }
+                // 새로 선택한 것에 효과 적용
+                optionEl.classList.add('selected');
+                selectedOption = optionText;
+            });
+            optionsContainer.appendChild(optionEl);
+        });
     }
-  }
+
+    // 제출 버튼을 눌렀을 때의 동작
+    submitBtn.addEventListener('click', () => {
+        if (selectedOption) {
+            if (selectedOption === quizData[currentQuiz].answer) {
+                score++;
+            }
+            currentQuiz++;
+
+            if (currentQuiz < quizData.length) {
+                loadQuiz();
+            } else {
+                // 퀴즈가 끝났을 때
+                quizContainer.innerHTML = `
+                    <h2>퀴즈 결과</h2>
+                    <p>총 ${quizData.length}문제 중 ${score}문제를 맞히셨습니다!</p>
+                    <button onclick="location.reload()">다시 풀기</button>
+                `;
+            }
+        } else {
+            alert("보기를 선택해주세요!");
+        }
+    });
+
+    // 첫 번째 문제 로드
+    loadQuiz();
 </script>
+
+</body>
+</html>
