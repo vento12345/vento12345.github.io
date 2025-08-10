@@ -5,118 +5,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 CBT</title>
     <style>
-        body {
-            font-family: 'Malgun Gothic', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        #quiz-container {
-            border: 1px solid #ccc;
-            padding: 25px;
-            border-radius: 10px;
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 600px;
-        }
-        #question {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        .options-container {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .option {
-            margin: 10px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .option:hover {
-            background-color: #f5f5f5;
-        }
-        /* 사용자가 선택한 보기를 표시하기 위한 클래스 */
-        .option.selected {
-            background-color: #dbeafe;
-            border-color: #60a5fa;
-        }
-        #submit-btn {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.1em;
-            background-color: #0d6efd;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-        }
-        #submit-btn:hover {
-            background-color: #0b5ed7;
-        }
-        #results {
-            text-align: center;
-            font-size: 1.5em;
-        }
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .hidden { display: none; } /* 화면 전환을 위한 CSS */
+        
+        /* 퀴즈 관련 스타일 */
+        #question { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; }
+        .options-container { list-style: none; padding: 0; }
+        .option { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+        .option:hover { background-color: #f5f5f5; }
+        .option.selected { background-color: #dbeafe; border-color: #60a5fa; }
+        .button { width: 100%; padding: 15px; font-size: 1.1em; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .primary-button { background-color: #0d6efd; }
+        .primary-button:hover { background-color: #0b5ed7; }
+        .secondary-button { background-color: #6c757d; }
+        
+        /* 문제 관리 폼 스타일 */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        textarea { height: 150px; resize: vertical; }
     </style>
 </head>
 <body>
 
-<div id="quiz-container">
-    <div id="question">문제를 불러오는 중...</div>
-    <ul class="options-container" id="options-container">
-        </ul>
-    <button id="submit-btn">정답 제출</button>
-    <div id="results"></div>
-</div>
+    <div class="container">
+        <div id="quiz-view">
+            <h2 id="quiz-header">나만의 CBT</h2>
+            <div id="quiz-body">
+                <div id="question">문제를 불러오는 중...</div>
+                <ul class="options-container" id="options-container"></ul>
+                <button id="submit-btn" class="button primary-button">정답 제출</button>
+                <div id="results"></div>
+            </div>
+            <hr style="margin: 20px 0;">
+            <button class="button secondary-button" onclick="showView('add-view')">✏️ 한 문제 추가하기</button>
+            <button class="button secondary-button" onclick="showView('bulk-add-view')">📚 여러 문제 추가하기</button>
+            <button class="button secondary-button" onclick="showView('data-view')">💾 데이터 저장/관리</button>
+        </div>
+
+        <div id="add-view" class="hidden">
+            <h2>✏️ 한 문제 추가하기</h2>
+            <div class="form-group">
+                <label for="new-question">문제</label>
+                <input type="text" id="new-question" placeholder="문제 내용을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label for="new-answer">정답</label>
+                <input type="text" id="new-answer" placeholder="정답을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label for="new-explanation">해설 (선택)</label>
+                <input type="text" id="new-explanation" placeholder="해설을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label>보기 (정답 포함 2개 이상)</label>
+                <div id="new-options-container">
+                    <input type="text" class="new-option" placeholder="보기 1">
+                    <input type="text" class="new-option" placeholder="보기 2">
+                </div>
+                <button onclick="addOptionField()">보기 추가</button>
+            </div>
+            <button class="button primary-button" onclick="addSingleQuestion()">추가하기</button>
+            <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
+        </div>
+        
+        <div id="bulk-add-view" class="hidden">
+            <h2>📚 여러 문제 추가하기</h2>
+            <p>아래 양식에 맞춰 문제를 입력하세요. 각 문제는 '---'로 구분합니다.</p>
+            <div class="form-group">
+                <textarea id="bulk-text" placeholder="문제: 첫 번째 문제 내용
+보기: 보기1, 보기2, 보기3
+정답: 보기2
+해설: 첫 번째 문제 해설
+---
+문제: 두 번째 문제 내용
+..."></textarea>
+            </div>
+            <button class="button primary-button" onclick="addBulkQuestions()">한 번에 추가하기</button>
+            <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
+        </div>
+
+        <div id="data-view" class="hidden">
+            <h2>💾 데이터 저장/관리</h2>
+            <p>문제 추가/수정이 끝나면, 아래 텍스트 전체를 복사(Ctrl+C)하여 GitHub의 index.html 파일 script 태그 안의 `let quizData = [...]` 부분을 교체해주세요.</p>
+            <div class="form-group">
+                <textarea id="json-output" readonly></textarea>
+            </div>
+            <button class="button secondary-button" onclick="showView('quiz-view')">← 돌아가기</button>
+        </div>
+    </div>
 
 <script>
-    // 1. 문제 은행 (이곳에 문제를 계속 추가하면 됩니다)
-    const quizData = [
+    // =======================================================
+    // ▼▼▼ 이 곳에 문제 데이터를 붙여넣습니다 ▼▼▼
+    // =======================================================
+    let quizData = [
         {
-            question: "대한민국의 수도는 어디일까요?",
-            options: ["부산", "서울", "인천", "대구"],
-            answer: "서울"
+            "question": "대한민국의 수도는 어디일까요?",
+            "options": ["부산", "서울", "인천", "대구"],
+            "answer": "서울",
+            "explanation": "서울은 대한민국의 수도이자 최대 도시입니다."
         },
         {
-            question: "HTML은 무엇의 약자일까요?",
-            options: ["Hyper Text Markup Language", "High Tool Markup Language", "Hyperlink and Text Markup Language"],
-            answer: "Hyper Text Markup Language"
+            "question": "HTML은 무엇의 약자일까요?",
+            "options": ["Hyper Text Markup Language", "High Tool Markup Language", "Hyperlink and Text Markup Language"],
+            "answer": "Hyper Text Markup Language",
+            "explanation": "HTML은 웹 페이지의 구조를 만드는 데 사용되는 표준 마크업 언어입니다."
         },
         {
-            question: "CSS가 하는 주요 역할은 무엇일까요?",
-            options: ["데이터베이스 관리", "웹페이지 스타일링", "서버 로직 처리"],
-            answer: "웹페이지 스타일링"
+            "question": "CSS가 하는 주요 역할은 무엇일까요?",
+            "options": ["데이터베이스 관리", "웹페이지 스타일링", "서버 로직 처리"],
+            "answer": "웹페이지 스타일링",
+            "explanation": "CSS(Cascading Style Sheets)는 웹 페이지의 디자인과 레이아웃을 담당합니다."
         }
     ];
+    // =======================================================
+    // ▲▲▲ 이 곳에 문제 데이터를 붙여넣습니다 ▲▲▲
+    // =======================================================
 
-    // 필요한 HTML 요소들을 가져옵니다.
-    const quizContainer = document.getElementById('quiz-container');
+    // 전역 변수 선언
+    const views = ['quiz-view', 'add-view', 'bulk-add-view', 'data-view'];
     const questionEl = document.getElementById('question');
     const optionsContainer = document.getElementById('options-container');
     const submitBtn = document.getElementById('submit-btn');
     const resultsEl = document.getElementById('results');
+    const quizHeaderEl = document.getElementById('quiz-header');
 
-    // 현재 문제 번호와 점수를 기록합니다.
     let currentQuiz = 0;
     let score = 0;
     let selectedOption = null;
 
-    // 퀴즈를 화면에 표시하는 함수
+    /**
+     * 특정 ID의 화면(view)만 보여주고 나머지는 숨깁니다.
+     * @param {string} viewId - 보여줄 화면의 ID
+     */
+    function showView(viewId) {
+        views.forEach(id => {
+            document.getElementById(id).classList.toggle('hidden', id !== viewId);
+        });
+
+        // 데이터 관리 화면을 보여줄 때, 현재 quizData를 JSON으로 변환하여 보여줍니다.
+        if (viewId === 'data-view') {
+            const jsonOutput = document.getElementById('json-output');
+            // JSON.stringify의 3번째 인자는 들여쓰기(pretty-print)를 위함입니다.
+            jsonOutput.value = `let quizData = ${JSON.stringify(quizData, null, 2)};`;
+        }
+        
+        // 퀴즈 화면으로 돌아갈 때 퀴즈를 다시 로드합니다.
+        if (viewId === 'quiz-view') {
+            loadQuiz();
+        }
+    }
+
+    /**
+     * 퀴즈를 화면에 표시하는 함수
+     */
     function loadQuiz() {
-        // 이전에 선택했던 값 초기화
+        if (quizData.length === 0) {
+            quizHeaderEl.textContent = "문제가 없습니다.";
+            document.getElementById('quiz-body').innerHTML = "<p>'문제 추가하기' 버튼을 눌러 첫 문제를 만들어보세요!</p>";
+            return;
+        }
+
+        // 퀴즈가 끝나면 결과 표시
+        if (currentQuiz >= quizData.length) {
+            document.getElementById('quiz-body').innerHTML = `
+                <h2>퀴즈 결과</h2>
+                <p>총 ${quizData.length}문제 중 ${score}문제를 맞히셨습니다!</p>
+                <button class="button primary-button" onclick="location.reload()">다시 풀기</button>
+            `;
+            return;
+        }
+        
+        quizHeaderEl.textContent = `나만의 CBT (${quizData.length}문제)`;
         selectedOption = null;
         resultsEl.innerHTML = '';
         submitBtn.textContent = '정답 제출';
@@ -124,18 +186,16 @@
         const currentQuizData = quizData[currentQuiz];
         questionEl.textContent = (currentQuiz + 1) + ". " + currentQuizData.question;
         
-        optionsContainer.innerHTML = ''; // 이전 보기들 삭제
+        optionsContainer.innerHTML = '';
         currentQuizData.options.forEach(optionText => {
             const optionEl = document.createElement('li');
             optionEl.classList.add('option');
             optionEl.textContent = optionText;
             optionEl.addEventListener('click', () => {
-                // 이전에 선택된 것의 효과를 제거
                 const currentSelected = document.querySelector('.option.selected');
                 if (currentSelected) {
                     currentSelected.classList.remove('selected');
                 }
-                // 새로 선택한 것에 효과 적용
                 optionEl.classList.add('selected');
                 selectedOption = optionText;
             });
@@ -143,30 +203,116 @@
         });
     }
 
-    // 제출 버튼을 눌렀을 때의 동작
+    /**
+     * 정답 제출 버튼 로직
+     */
     submitBtn.addEventListener('click', () => {
         if (selectedOption) {
             if (selectedOption === quizData[currentQuiz].answer) {
                 score++;
             }
             currentQuiz++;
-
-            if (currentQuiz < quizData.length) {
-                loadQuiz();
-            } else {
-                // 퀴즈가 끝났을 때
-                quizContainer.innerHTML = `
-                    <h2>퀴즈 결과</h2>
-                    <p>총 ${quizData.length}문제 중 ${score}문제를 맞히셨습니다!</p>
-                    <button onclick="location.reload()">다시 풀기</button>
-                `;
-            }
+            loadQuiz(); // 다음 문제 로드 또는 결과 표시
         } else {
             alert("보기를 선택해주세요!");
         }
     });
 
-    // 첫 번째 문제 로드
+    /**
+     * '한 문제 추가' 폼에서 보기 입력 필드를 동적으로 추가합니다.
+     */
+    function addOptionField() {
+        const container = document.getElementById('new-options-container');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'new-option';
+        input.placeholder = `보기 ${container.children.length + 1}`;
+        container.appendChild(input);
+    }
+    
+    /**
+     * '한 문제 추가' 폼의 데이터를 quizData 배열에 추가합니다.
+     */
+    function addSingleQuestion() {
+        const question = document.getElementById('new-question').value.trim();
+        const answer = document.getElementById('new-answer').value.trim();
+        const explanation = document.getElementById('new-explanation').value.trim();
+        
+        const optionNodes = document.querySelectorAll('.new-option');
+        const options = Array.from(optionNodes).map(input => input.value.trim()).filter(Boolean);
+
+        if (!question || !answer || options.length < 2) {
+            alert("문제, 정답, 그리고 최소 2개 이상의 보기를 입력해야 합니다.");
+            return;
+        }
+        
+        if (!options.includes(answer)) {
+            alert("보기에 정답이 포함되어야 합니다.");
+            return;
+        }
+
+        quizData.push({ question, options, answer, explanation });
+        alert("문제가 성공적으로 추가되었습니다! '데이터 저장/관리' 화면에서 변경사항을 복사하여 저장하세요.");
+        
+        // 입력 필드 초기화
+        document.getElementById('new-question').value = '';
+        document.getElementById('new-answer').value = '';
+        document.getElementById('new-explanation').value = '';
+        document.getElementById('new-options-container').innerHTML = `
+            <input type="text" class="new-option" placeholder="보기 1">
+            <input type="text" class="new-option" placeholder="보기 2">`;
+            
+        showView('quiz-view'); // 퀴즈 화면으로 복귀
+    }
+
+    /**
+     * '여러 문제 추가' 폼의 텍스트를 파싱하여 quizData 배열에 추가합니다.
+     */
+    function addBulkQuestions() {
+        const bulkText = document.getElementById('bulk-text').value.trim();
+        if (!bulkText) {
+            alert("추가할 문제 내용을 입력하세요.");
+            return;
+        }
+        
+        const questionBlocks = bulkText.split('---');
+        let addedCount = 0;
+        
+        questionBlocks.forEach(block => {
+            block = block.trim();
+            if (!block) return;
+
+            const lines = block.split('\n');
+            const qData = {};
+
+            lines.forEach(line => {
+                if (line.toLowerCase().startsWith('문제:')) {
+                    qData.question = line.substring(3).trim();
+                } else if (line.toLowerCase().startsWith('보기:')) {
+                    qData.options = line.substring(3).trim().split(',').map(s => s.trim());
+                } else if (line.toLowerCase().startsWith('정답:')) {
+                    qData.answer = line.substring(3).trim();
+                } else if (line.toLowerCase().startsWith('해설:')) {
+                    qData.explanation = line.substring(3).trim();
+                }
+            });
+
+            if (qData.question && qData.answer && qData.options) {
+                quizData.push(qData);
+                addedCount++;
+            }
+        });
+
+        if (addedCount > 0) {
+            alert(`${addedCount}개의 문제가 성공적으로 추가되었습니다! '데이터 저장/관리' 화면에서 변경사항을 복사하여 저장하세요.`);
+            document.getElementById('bulk-text').value = ''; // 입력창 비우기
+            showView('quiz-view'); // 퀴즈 화면으로 복귀
+        } else {
+            alert("추가할 문제를 찾지 못했거나 양식이 올바르지 않습니다.");
+        }
+    }
+
+    // 페이지 첫 로드 시 퀴즈 시작
     loadQuiz();
 </script>
 
